@@ -9,6 +9,9 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -69,12 +72,16 @@ public class SerializingFileBaseAddressBook implements AddressBook {
 	}
 
 	@Override
-	public Contact[] getAll() throws DataAccessException {
+	public List<Contact> getAll() throws DataAccessException {
 		File[] files = this.dir.listFiles(CONTACT_FILE_FILTER);
-		Contact[] contacts = new Contact[files.length];
-		for (int i = 0; i < files.length; i++) {
-			contacts[i] = this.getByFile(files[i]);
+		if (files == null) {
+			return Collections.emptyList();
 		}
+		List<Contact> contacts = new ArrayList<Contact>(files.length);
+		for (int i = 0; i < files.length; i++) {
+			contacts.add(this.getByFile(files[i]));
+		}
+		// Collections.sort(contacts);
 		return contacts;
 	}
 
@@ -103,4 +110,9 @@ public class SerializingFileBaseAddressBook implements AddressBook {
 					+ email + "] in file " + file.getAbsolutePath());
 		}
 	}
+
+	@Override
+	public void close() throws DataAccessException {
+	}
+
 }

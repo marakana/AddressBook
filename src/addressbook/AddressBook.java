@@ -1,5 +1,7 @@
 package addressbook;
 
+import java.util.List;
+
 public interface AddressBook {
 
 	/**
@@ -19,11 +21,11 @@ public interface AddressBook {
 	/**
 	 * Get all contacts
 	 * 
-	 * @return all contacts, never null.
+	 * @return all contacts sorted by first then last names, never null.
 	 * @throws DataAccessException
 	 *             if there is a problem getting contacts
 	 */
-	public Contact[] getAll() throws DataAccessException;
+	public List<Contact> getAll() throws DataAccessException;
 
 	/**
 	 * Store a contact
@@ -49,4 +51,6 @@ public interface AddressBook {
 	 *             if email is null
 	 */
 	public void deleteByEmail(String email) throws DataAccessException;
+
+	public void close() throws DataAccessException;
 }

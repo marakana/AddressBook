@@ -1,8 +1,14 @@
 package addressbook;
 
 import java.io.Serializable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import static addressbook.Util.compare;
 
-public class Contact implements Serializable {
+public class Contact implements Serializable, Comparable<Contact> {
+
+	private static final Pattern PARSE_PATTERN = Pattern
+			.compile("([^ ]+) ([^ ]+) <([^ ]+)> (?:\\(([^ ]+)\\))?");
 
 	private static final long serialVersionUID = 3293493664857316093L;
 	private String firstName;
@@ -10,6 +16,23 @@ public class Contact implements Serializable {
 	private final String email;
 	private String phone;
 
+	public static Contact parse(String in) {
+		Matcher m = PARSE_PATTERN.matcher(in);
+		if (m.matches()) {
+			return new Contact(m.group(1), m.group(2), m.group(3), m.group(4));
+		} else {
+			throw new IllegalArgumentException("Invalid input string: " + in);
+		}
+	}
+
+	/**
+	 * 
+	 * @param email
+	 * @throws NullPointerException
+	 *             if email is null
+	 * @throws IllegalArgumentException
+	 *             if email is invalid
+	 */
 	public Contact(String email) {
 		if (email == null) {
 			throw new NullPointerException("Email must not be null");
@@ -26,6 +49,11 @@ public class Contact implements Serializable {
 		this(email);
 		this.firstName = firstName;
 		this.lastName = lastName;
+	}
+
+	public Contact(String firstName, String lastName, String email, String phone) {
+		this(firstName, lastName, email);
+		this.phone = phone;
 	}
 
 	public String getFirstName() {
@@ -51,6 +79,12 @@ public class Contact implements Serializable {
 	public void setPhone(String phone) {
 		this.phone = phone;
 	}
+	
+	public Contact withPhone(String phone) {
+		this.phone = phone;
+		return this;
+	}
+	
 
 	/**
 	 * Get the email of this contact
@@ -66,7 +100,8 @@ public class Contact implements Serializable {
 		if (obj == this) {
 			return true;
 		} else if (obj != null && obj.getClass() == this.getClass()) {
-			return this.getEmail().equals(((Contact) obj).getEmail());
+			Contact that = (Contact) obj;
+			return this.getEmail().equals(that.getEmail());
 		} else {
 			return false;
 		}
@@ -79,7 +114,15 @@ public class Contact implements Serializable {
 
 	@Override
 	public String toString() {
-		return String.format("%s %s <%s>", this.getFirstName(),
-				this.getLastName(), this.getEmail());
+		return String.format("%s %s <%s> (%s)", this.getFirstName(),
+				this.getLastName(), this.getEmail(), this.getPhone());
 	}
+
+	@Override
+	public int compareTo(Contact other) {
+		int result = compare(this.getFirstName(), other.getFirstName());
+		return result == 0 ? compare(this.getLastName(), other.getLastName())
+				: result;
+	}
+
 }

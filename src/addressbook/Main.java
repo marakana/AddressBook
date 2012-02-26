@@ -1,9 +1,8 @@
 package addressbook;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.Method;
 
 public class Main {
 	private static final String PROMPT = "address-book> ";
@@ -16,25 +15,49 @@ public class Main {
 		}
 	}
 
-	public static void main(String[] args) throws IOException,
-			DataAccessException {
-		AddressBook addressBook = new SerializingFileBaseAddressBook(new File(
-				args[0]));
+	public static void main(String[] args) throws Exception {
+
+		Class<?> clazz = Class.forName(args[0]);
+
+		AddressBookFactory factory = (AddressBookFactory) clazz.newInstance();
+		for (int i = 1; i < args.length; i += 2) {
+			String propName = args[i];
+			String propValue = args[i + 1];
+			Method method = clazz.getMethod("set" + propName, String.class);
+			method.invoke(factory, propValue);
+			if (method.getAnnotations().length > 0
+					&& method.getAnnotations()[0] instanceof Required) {
+				System.out.println("Set required property ["
+						+ propName
+						+ "] to ["
+						+ propValue
+						+ "] where default is ["
+						+ ((Required) method.getAnnotations()[0])
+								.defaultValue() + "]");
+			} else {
+				System.out.println("Set optional property [" + propName
+						+ "] to [" + propValue + "] ");
+			}
+		}
+
+		AddressBook addressBook = factory.getAddressBook();
+
 		System.out.print(PROMPT);
 		BufferedReader reader = new BufferedReader(new InputStreamReader(
 				System.in));
 		String line;
 		while ((line = reader.readLine()) != null) {
 			if ("quit".equals(line)) {
+				addressBook.close();
 				break;
 			} else if ("help".equals(line)) {
 				System.out.println("OK");
 				System.out.println(HELP);
 			} else if ("list".equals(line)) {
-				System.out.println("OK");
 				for (Contact contact : addressBook.getAll()) {
 					System.out.println(contact);
 				}
+				System.out.println("OK");
 			} else {
 				String[] request = line.split(" ");
 				if (request.length >= 2) {
@@ -43,8 +66,8 @@ public class Main {
 						if (contact == null) {
 							error("No such contact", false);
 						} else {
-							System.out.println("OK");
 							System.out.println(contact);
+							System.out.println("OK");
 						}
 					} else if ("delete".equals(request[0])) {
 						addressBook.deleteByEmail(request[1]);
