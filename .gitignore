@@ -16,8 +16,8 @@
 
 # Generated code #
 ##################
-*/bin/*
-*/out/*
+bin/*
+out/*
 
 # Logs and databases #
 ######################
