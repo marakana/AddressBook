@@ -1,7 +1,6 @@
 package addressbook;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -11,6 +10,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public class AddressBookServer {
+	private static final String USAGE = "Main <port> <address-book-factory-type> <prop-name>=<prop-value> ...";
+
 	private static final String PROMPT = "address-book> ";
 	private static final String HELP = "Usage: quit|help|list|get <email>|delete <email>|store <first-name> <last-name> <email> [phone]";
 
@@ -22,10 +23,25 @@ public class AddressBookServer {
 	}
 
 	public static void main(String[] args) throws IOException,
-			DataAccessException {
-		AddressBook addressBook = new SerializingFileBaseAddressBook(new File(
-				args[0]));
-		int port = args.length == 2 ? Integer.parseInt(args[1]) : 5000;
+			AddressBookException {
+		if (args.length < 2) {
+			System.err.println(USAGE);
+			return;
+		}
+		int port = Integer.parseInt(args[0]);
+		AddressBookFactory.Builder builder = new AddressBookFactory.Builder(
+				args[1]);
+		for (int i = 2; i < args.length; i++) {
+			try {
+				builder.setProperty(args[i]);
+			} catch (IllegalArgumentException e) {
+				System.err.println("ERROR: " + e.getMessage());
+				System.err.println(USAGE);
+				return;
+			}
+		}
+		AddressBook addressBook = builder.getAddressBookFactory()
+				.getAddressBook();
 		ServerSocket serverSocket = new ServerSocket(port);
 		System.out.println("Listening on port " + port);
 		try {
@@ -52,7 +68,7 @@ public class AddressBookServer {
 	}
 
 	private static void handle(AddressBook addressBook, InputStream in,
-			OutputStream actualOut) throws IOException, DataAccessException {
+			OutputStream actualOut) throws IOException, AddressBookException {
 		PrintStream out = new PrintStream(actualOut);
 		out.print(PROMPT);
 		BufferedReader reader = new BufferedReader(new InputStreamReader(in));

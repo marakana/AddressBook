@@ -5,7 +5,7 @@ import java.io.File;
 import org.junit.After;
 import org.junit.Before;
 
-public class SerializingFileBaseAddressBookTest extends AbstractAddressBookTest {
+public class FileBasedAddressBookTest extends AbstractAddressBookTest {
 
 	private File dir;
 
@@ -26,6 +26,6 @@ public class SerializingFileBaseAddressBookTest extends AbstractAddressBookTest 
 
 	@Override
 	protected AddressBook getAddressBook() {
-		return new SerializingFileBaseAddressBook(dir);
+		return new FileBasedAddressBook(dir, new SerializingContactTranscoder());
 	}
 }

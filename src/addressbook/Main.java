@@ -2,9 +2,9 @@ package addressbook;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.lang.reflect.Method;
 
 public class Main {
+	private static final String USAGE = "Main <address-book-factory-type> <prop-name>=<prop-value> ...";
 	private static final String PROMPT = "address-book> ";
 	private static final String HELP = "Usage: quit|help|list|get <email>|delete <email>|store <first-name> <last-name> <email> [phone]";
 
@@ -16,31 +16,23 @@ public class Main {
 	}
 
 	public static void main(String[] args) throws Exception {
-
-		Class<?> clazz = Class.forName(args[0]);
-
-		AddressBookFactory factory = (AddressBookFactory) clazz.newInstance();
-		for (int i = 1; i < args.length; i += 2) {
-			String propName = args[i];
-			String propValue = args[i + 1];
-			Method method = clazz.getMethod("set" + propName, String.class);
-			method.invoke(factory, propValue);
-			if (method.getAnnotations().length > 0
-					&& method.getAnnotations()[0] instanceof Required) {
-				System.out.println("Set required property ["
-						+ propName
-						+ "] to ["
-						+ propValue
-						+ "] where default is ["
-						+ ((Required) method.getAnnotations()[0])
-								.defaultValue() + "]");
-			} else {
-				System.out.println("Set optional property [" + propName
-						+ "] to [" + propValue + "] ");
+		if (args.length == 0) {
+			System.err.println(USAGE);
+			return;
+		}
+		AddressBookFactory.Builder builder = new AddressBookFactory.Builder(
+				args[0]);
+		for (int i = 1; i < args.length; i++) {
+			try {
+				builder.setProperty(args[i]);
+			} catch (IllegalArgumentException e) {
+				System.err.println("ERROR: " + e.getMessage());
+				System.err.println(USAGE);
+				return;
 			}
 		}
-
-		AddressBook addressBook = factory.getAddressBook();
+		AddressBook addressBook = builder.getAddressBookFactory()
+				.getAddressBook();
 
 		System.out.print(PROMPT);
 		BufferedReader reader = new BufferedReader(new InputStreamReader(

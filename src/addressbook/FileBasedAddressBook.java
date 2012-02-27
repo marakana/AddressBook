@@ -6,18 +6,16 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
 import javax.xml.bind.DatatypeConverter;
 
-public class SerializingFileBaseAddressBook implements AddressBook {
+public class FileBasedAddressBook implements AddressBook {
 
 	private static final String EXTENSION = ".contact";
 
@@ -25,15 +23,17 @@ public class SerializingFileBaseAddressBook implements AddressBook {
 		@Override
 		public boolean accept(File file) {
 			return file.isFile()
-					&& file.getName().endsWith(
-							SerializingFileBaseAddressBook.EXTENSION);
+					&& file.getName().endsWith(FileBasedAddressBook.EXTENSION);
 		}
 	};
 
 	private final File dir;
 
-	public SerializingFileBaseAddressBook(File dir) {
+	private final ContactTranscoder contactTranscoder;
+
+	public FileBasedAddressBook(File dir, ContactTranscoder contactTranscoder) {
 		this.dir = dir;
+		this.contactTranscoder = contactTranscoder;
 	}
 
 	private File getFileForEmail(String email) {
@@ -46,33 +46,33 @@ public class SerializingFileBaseAddressBook implements AddressBook {
 	}
 
 	@Override
-	public Contact getByEmail(String email) throws DataAccessException {
+	public Contact getByEmail(String email) throws AddressBookException {
 		return this.getByFile(this.getFileForEmail(email));
 	}
 
-	private Contact getByFile(File file) throws DataAccessException {
+	private Contact getByFile(File file) throws AddressBookException {
 		if (!file.exists()) {
 			return null;
 		} else {
 			try {
-				ObjectInputStream in = new ObjectInputStream(
-						new GZIPInputStream(new FileInputStream(file)));
+				InputStream in = new FileInputStream(file);
 				try {
-					return (Contact) in.readObject();
+					return this.contactTranscoder.decode(in);
 				} finally {
 					in.close();
 				}
 			} catch (FileNotFoundException e) {
 				return null;
-			} catch (Exception e) {
-				throw new DataAccessException("Cannot get contact from file "
-						+ file.getAbsolutePath(), e);
+			} catch (IOException e) {
+				throw new AddressBookException(
+						"Failed to get contact from file "
+								+ file.getAbsolutePath(), e);
 			}
 		}
 	}
 
 	@Override
-	public List<Contact> getAll() throws DataAccessException {
+	public List<Contact> getAll() throws AddressBookException {
 		File[] files = this.dir.listFiles(CONTACT_FILE_FILTER);
 		if (files == null) {
 			return Collections.emptyList();
@@ -81,38 +81,37 @@ public class SerializingFileBaseAddressBook implements AddressBook {
 		for (int i = 0; i < files.length; i++) {
 			contacts.add(this.getByFile(files[i]));
 		}
-		// Collections.sort(contacts);
+		Collections.sort(contacts);
 		return contacts;
 	}
 
 	@Override
-	public void store(Contact contact) throws DataAccessException {
+	public void store(Contact contact) throws AddressBookException {
 		File file = this.getFileForEmail(contact.getEmail());
 		try {
-			ObjectOutputStream out = new ObjectOutputStream(
-					new GZIPOutputStream(new FileOutputStream(file)));
+			OutputStream out = new FileOutputStream(file);
 			try {
-				out.writeObject(contact);
+				this.contactTranscoder.encode(contact, out);
 			} finally {
 				out.close();
 			}
 		} catch (IOException e) {
-			throw new DataAccessException("Cannot store contact [" + contact
-					+ "] to file " + file.getAbsolutePath(), e);
+			throw new AddressBookException("Failed to store contact ["
+					+ contact + "] to file " + file.getAbsolutePath(), e);
 		}
 	}
 
 	@Override
-	public void deleteByEmail(String email) throws DataAccessException {
+	public void deleteByEmail(String email) throws AddressBookException {
 		File file = this.getFileForEmail(email);
 		if (file.exists() && !file.delete()) {
-			throw new DataAccessException("Cannot delete contact with email ["
+			throw new AddressBookException("Cannot delete contact with email ["
 					+ email + "] in file " + file.getAbsolutePath());
 		}
 	}
 
 	@Override
-	public void close() throws DataAccessException {
+	public void close() throws AddressBookException {
 	}
 
 }

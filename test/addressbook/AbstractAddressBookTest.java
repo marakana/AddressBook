@@ -17,7 +17,7 @@ public abstract class AbstractAddressBookTest {
 
 	protected abstract AddressBook getAddressBook();
 
-	private void store(Contact c1) throws DataAccessException {
+	private void store(Contact c1) throws AddressBookException {
 		addressBook.store(c1);
 		Contact c2 = addressBook.getByEmail(c1.getEmail());
 		assertEquals(c1, c2);
@@ -28,35 +28,35 @@ public abstract class AbstractAddressBookTest {
 	}
 
 	@Test
-	public void store() throws DataAccessException {
+	public void store() throws AddressBookException {
 		store(new Contact("John", "Smith", "john@smith.com"));
 	}
 
 	@Test
-	public void storeWithPhone() throws DataAccessException {
+	public void storeWithPhone() throws AddressBookException {
 		store(ContactBuilder.build("john@smith.com").withFirstName("John")
 				.withLastName("Smith").withPhone("415-555-1234").getContact());
 	}
 	
 	@Test
-	public void storeWithNullFirstName() throws DataAccessException {
+	public void storeWithNullFirstName() throws AddressBookException {
 		store(ContactBuilder.build("john@smith.com").withFirstName(null)
 				.withLastName("Smith").withPhone("415-555-1234").getContact());
 	}
 	
 	@Test
-	public void storeWithNullLastName() throws DataAccessException {
+	public void storeWithNullLastName() throws AddressBookException {
 		store(ContactBuilder.build("john@smith.com").withFirstName("John")
 				.withLastName(null).withPhone("415-555-1234").getContact());
 	}
 
 	@Test(expected = NullPointerException.class)
-	public void storeNull() throws DataAccessException {
+	public void storeNull() throws AddressBookException {
 		addressBook.store(null);
 	}
 
 	@Test(expected = NullPointerException.class)
-	public void deleteNull() throws DataAccessException {
+	public void deleteNull() throws AddressBookException {
 		addressBook.deleteByEmail(null);
 	}
 

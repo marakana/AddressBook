@@ -31,4 +31,15 @@ public class Util {
 		result.put(key, value);
 		return result;
 	}
+
+	public static <T> T getByType(Class<? extends T> type, T... elements) {
+		if (elements != null) {
+			for (T element : elements) {
+				if (type.isAssignableFrom(element.getClass())) {
+					return element;
+				}
+			}
+		}
+		return null;
+	}
 }
